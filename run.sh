@@ -23,6 +23,18 @@ python ./src/generate_X_using_feature_selection.py $n ./data/snow.Y ./data/tmp3 
 ######################## generate corels rule list ########################
 
 
+###################################################
+########################  NN
+
+## 1. word embedding    
+# input is data/tmp3 
+
+
+
+## 2. LSTM
+
+
+## 3. rule -> prttype
 
 
 
