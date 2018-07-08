@@ -8,6 +8,8 @@ https://github.com/nlarusstone/corels
 For word2vec, we use the code (https://github.com/Adoni/word2vec_pytorch)
 
 
-====================
+
+
 ./run.sh
-====================
+
+
