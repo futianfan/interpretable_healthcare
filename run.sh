@@ -27,9 +27,7 @@ python ./src/generate_X_using_feature_selection.py $n ./data/snow.Y ./data/tmp3 
 ## 1. word embedding    
 # input is data/tmp3 
 python ./word2vec_tool/word2vec.py ./data/tmp3 ./data/id2vec.txt
-## 2. LSTM
-
-
-## 3. rule -> prttype
+## 2. LSTM + 3. rule -> prttype
   ## rule r -> x -> prttype
 
+python ./src/neural_net.py data/id2vec.txt data/tmp3 results/corels_rule_list

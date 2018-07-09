@@ -21,6 +21,25 @@ with open(sys.argv[2], 'r') as raw_data:
 	lines = raw_data.readlines()
 	data_dict = {i:f3(line) for i,line in enumerate(lines)}
 ## read-in rule:   results/corels_rule_list
+f4 = lambda x: True if 'if ' in x and ' then ' in x else False
+def rule2num(string):
+	bgn = string.find('_') + 1
+	endn = string.find('=')
+	fea_num = int(string[bgn:endn])
+	lab = 1 if 'yes' else 0
+	return fea_num,lab
+
+with open(sys.argv[3], 'r') as f_rule:
+	lines = f_rule.readlines()
+	lines = filter(f4,lines)
+	rule_dict = {}
+	for indx, line in enumerate(lines):
+		bgn = line.find('({')
+		endn = line.find('})')
+		rule = line[bgn + 2:endn]
+		dic = {rule2num(j)[0]:rule2num(j)[1] for j in rule.split(',')}
+		rule_dict[indx] = dic
+
 
 
 
