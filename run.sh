@@ -22,22 +22,14 @@ python ./src/generate_X_using_feature_selection.py $n ./data/snow.Y ./data/tmp3 
 ./corels/corels -r 0.0000000015 -c 3 -p 1  data/snow.X_new data/label > results/corels_rule_list
 ######################## generate corels rule list ########################
 
-
 ###################################################
 ########################  NN
-
 ## 1. word embedding    
 # input is data/tmp3 
-
-
-
+python ./word2vec_tool/word2vec.py ./data/tmp3 ./data/id2vec.txt
 ## 2. LSTM
 
 
 ## 3. rule -> prttype
-
-
-
-
-
+  ## rule r -> x -> prttype
 
