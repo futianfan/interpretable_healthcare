@@ -74,11 +74,13 @@ BATCH_SIZE = 32
 def data2array(data_dict):
 	leng = len(data_dict)
 	arr = np.zeros((leng, MAX_LENGTH, INPUT_SIZE),dtype = np.float32)
+	arr_len = []
 	for i in range(leng):
 		line = data_dict[i]
 		line = line[-MAX_LENGTH:]
 		for j in range(len(line)):
 			arr[i,j,:] = id2vec[line[j]]
+		arr_len.append(len(line))
 	return arr 
 
 class RLP(torch.nn.Module):
@@ -93,28 +95,12 @@ class RLP(torch.nn.Module):
         self.out1 = nn.Linear(PROTOTYPE_NUM, OUT_SIZE)
         self.out2 = nn.Linear(OUT_SIZE, 2)
 
-    	prot = np.zeros((PROTOTYPE_NUM,HIDDEN_SIZE),dtype = np.float32)		## PROTOTYPE_NUM, HIDDEN_SIZE 
-    	self.prototype = torch.from_numpy(prot).float()
-
-'''    def generate_prototype(self, data_dict, rule_dict):
-    	for i in range(len(rule_dict)):
-    		data = []
-    		for j in rule_dict[i]:
-    			data.append(data_dict[j])
-    		leng = len(data)
-
-
-
-
-    		self.prototype[i,:] = 
-
-
-
-
+    	## PROTOTYPE_NUM, HIDDEN_SIZE 
+    	self.prototype = torch.zeros(PROTOTYPE_NUM, HIDDEN_SIZE)
     	self.prototype = Variable(self.prototype)
-    	return
-'''
-    def forward(self, X_batch, X_len):
+
+
+    def forward_rnn(self, X_batch, X_len):
     	batch_size = X_batch.shape[0]
     	dd1 = sorted(range(len(X_len)), key=lambda k: X_len[k], reverse = True)
         dd = [0 for i in range(len(dd1))]
@@ -132,7 +118,12 @@ class RLP(torch.nn.Module):
         indx = [int(v) for v in indx]
         X_out2 = unpack_X_out[range(batch_size), indx]
         X_out2 = X_out2[dd]  ## batch_size, HIDDEN_SIZE 
+    	return X_out2
 
+
+    def forward(self, X_batch, X_len):
+    	batch_size = X_batch.shape[0]
+    	X_out2 = self.forward_rnn(X_batch, X_len)
         ###### prototype
         X_out2 = X_out2.view(batch_size,HIDDEN_SIZE,1)
         X_out3 = X_out2.expand(batch_size, HIDDEN_SIZE, PROTOTYPE_NUM)
@@ -146,7 +137,24 @@ class RLP(torch.nn.Module):
         return X_out6
 
 
-
+    def generate_prototype(self, data_dict, rule_dict):
+    	for i in range(len(rule_dict)):
+    		data = []
+    		for j in rule_dict[i]:
+    			data.append(data_dict[j])
+    		leng = len(data)
+    		T = int(leng / BATCH_SIZE)
+    		for j in range(T):
+    			bgn = j * BATCH_SIZE
+    			endn = min(leng, bgn + BATCH_SIZE)
+    			batch_data, batch_len = data2array(data[bgn:endn])
+    			batch_X_out = self.forward_rnn(batch_data, batch_len)
+    			if j==0:
+    				X_out = batch_X_out
+    			else:
+    				X_out = torch.cat([X_out, batch_X_out], 0)
+    		self.prototype[i,:] = torch.mean(X_out)
+    	return
 
 
 
