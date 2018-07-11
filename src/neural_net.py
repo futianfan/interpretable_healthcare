@@ -78,9 +78,13 @@ class RLP(torch.nn.Module):
             hidden_size = HIDDEN_SIZE,
             num_layers = NUM_LAYER,
             batch_first = BATCH_FIRST
-            )        
+            )      
         self.out1 = nn.Linear(PROTOTYPE_NUM, OUT_SIZE)
         self.out2 = nn.Linear(OUT_SIZE, 2)
+
+    	prot = np.zeros((PROTOTYPE_NUM,HIDDEN_SIZE),dtype = np.float32)		## PROTOTYPE_NUM, HIDDEN_SIZE 
+    	self.prototype = torch.from_numpy(prot).float()
+
 
     def forward(self, X_batch, X_len):
     	batch_size = X_batch.shape[0]
@@ -99,8 +103,21 @@ class RLP(torch.nn.Module):
         indx = list(np.array(X_len_sort) - 1)
         indx = [int(v) for v in indx]
         X_out2 = unpack_X_out[range(batch_size), indx]
-        X_out2 = X_out2[dd]
+        X_out2 = X_out2[dd]  ## batch_size, HIDDEN_SIZE 
+
+        ###### prototype
+        X_out2 = X_out2.view(batch_size,HIDDEN_SIZE,1)
+        X_out3 = X_out2.expand(batch_size, HIDDEN_SIZE, PROTOTYPE_NUM)
+        prtt = self.prototype.view(1, HIDDEN_SIZE, PROTOTYPE_NUM)
+        prtt = prtt.expand(batch_size, HIDDEN_SIZE, PROTOTYPE_NUM)
+        X_diff = (X_out3 - prtt)**2
+        X_out4 = torch.sum(X_diff, 1)  ### batch_size, PROTOTYPE_NUM
+        ###### prototype
+        X_out5 = F.relu(self.out1(X_out4))
+        X_out6 = F.softmax(self.out2(X_out5))
+        return X_out6
         
+
 
 
 
