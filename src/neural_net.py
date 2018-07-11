@@ -69,6 +69,17 @@ OUT_SIZE = 30
 NUM_LAYER = 1
 BATCH_FIRST = True 
 MAX_LENGTH = 200
+BATCH_SIZE = 32
+
+def data2array(data_dict):
+	leng = len(data_dict)
+	arr = np.zeros((leng, MAX_LENGTH, INPUT_SIZE),dtype = np.float32)
+	for i in range(leng):
+		line = data_dict[i]
+		line = line[-MAX_LENGTH:]
+		for j in range(len(line)):
+			arr[i,j,:] = id2vec[line[j]]
+	return arr 
 
 class RLP(torch.nn.Module):
     def __init__(self, INPUT_SIZE, HIDDEN_SIZE, NUM_LAYER, PROTOTYPE_NUM, OUT_SIZE,  BATCH_FIRST = True):
@@ -85,7 +96,24 @@ class RLP(torch.nn.Module):
     	prot = np.zeros((PROTOTYPE_NUM,HIDDEN_SIZE),dtype = np.float32)		## PROTOTYPE_NUM, HIDDEN_SIZE 
     	self.prototype = torch.from_numpy(prot).float()
 
+'''    def generate_prototype(self, data_dict, rule_dict):
+    	for i in range(len(rule_dict)):
+    		data = []
+    		for j in rule_dict[i]:
+    			data.append(data_dict[j])
+    		leng = len(data)
 
+
+
+
+    		self.prototype[i,:] = 
+
+
+
+
+    	self.prototype = Variable(self.prototype)
+    	return
+'''
     def forward(self, X_batch, X_len):
     	batch_size = X_batch.shape[0]
     	dd1 = sorted(range(len(X_len)), key=lambda k: X_len[k], reverse = True)
@@ -116,7 +144,7 @@ class RLP(torch.nn.Module):
         X_out5 = F.relu(self.out1(X_out4))
         X_out6 = F.softmax(self.out2(X_out5))
         return X_out6
-        
+
 
 
 
