@@ -61,7 +61,7 @@ with open(sys.argv[3], 'r') as f_rule:
 			return True
 		rule_dict[indx] = filter(rule_match_data, range(len(data_dict)))  ### data_dict.keys()
 		print(len(rule_dict[indx]), end = ' ')
-
+print('num of matching data for each rule')
 with open(sys.argv[4], 'r') as f_label:
 	label_line = f_label.readlines()
 	label = []
@@ -78,7 +78,7 @@ OUT_SIZE = 30
 NUM_LAYER = 1
 BATCH_FIRST = True 
 MAX_LENGTH = 200
-BATCH_SIZE = 1
+BATCH_SIZE = 8
 PROTOTYPE_NUM = len(rule_dict)
 
 def data2array(data_dict):
@@ -131,7 +131,6 @@ class RLP(torch.nn.Module):
         X_out2 = X_out2[dd]  ## batch_size, HIDDEN_SIZE 
     	return X_out2
 
-
     def forward(self, X_batch, X_len):
     	X_batch = torch.from_numpy(X_batch).float()
     	X_batch = Variable(X_batch)
@@ -148,7 +147,6 @@ class RLP(torch.nn.Module):
         X_out5 = F.relu(self.out1(X_out4))
         X_out6 = F.softmax(self.out2(X_out5))
         return X_out6
-
 
     def generate_prototype(self, data_dict, rule_dict):
     	for i in range(len(rule_dict)):
@@ -171,7 +169,6 @@ class RLP(torch.nn.Module):
     		self.prototype[i,:] = torch.mean(X_out, 0)
     	#self.prototype = self.prototype.data.numpy()
     	#self.prototype = torch.from_numpy(self.prototype).float()
-
 
 LR = 1e-3 
 nnet  = RLP(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYER, PROTOTYPE_NUM, OUT_SIZE,  BATCH_FIRST = True)
@@ -203,7 +200,7 @@ for epoch in range(EPOCH):
         output = nnet(batch_x, batch_len)
         loss = loss_crossentropy(output, batch_label)
         opt_.zero_grad()
-        loss.backward()
+        loss.backward(retain_variables = True)
         opt_.step()
         loss_average += loss.data[0]
         #print('Epoch: ' + str(epoch) + ", " + str(i) + "/"+ str(iter_in_epoch)+ ': loss value is ' + str(loss.data[0]))
