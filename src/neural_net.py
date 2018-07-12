@@ -78,7 +78,7 @@ OUT_SIZE = 30
 NUM_LAYER = 1
 BATCH_FIRST = True 
 MAX_LENGTH = 200
-BATCH_SIZE = 32
+BATCH_SIZE = 256
 PROTOTYPE_NUM = len(rule_dict)
 
 def data2array(data_dict):
@@ -172,7 +172,7 @@ class RLP(torch.nn.Module):
     	#self.prototype = self.prototype.data.numpy()
     	#self.prototype = torch.from_numpy(self.prototype).float()
 
-LR = 1e-3 
+LR = 1e-2 ### 1e-2 >> 1e-3, 1e-1 < 1e-2
 nnet  = RLP(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYER, PROTOTYPE_NUM, OUT_SIZE,  BATCH_FIRST = True)
 print('Build network')
 nnet.generate_prototype(data_dict, rule_dict)
@@ -185,14 +185,14 @@ N = len(data_dict)
 iter_in_epoch = int(np.ceil(N/BATCH_SIZE))
 #test_N = test_query.shape[0]
 #test_iter_in_epoch = int(test_N / batch_size)
-EPOCH = 3
+EPOCH = 15
 lamb = 1
 for epoch in range(EPOCH):
     loss_average = 0
     t1 = time()
     for i in range(iter_in_epoch):
         ##### train
-        print('iter ' + i , end = ' ')
+        print('Epoch ' + str(epoch)+ ': iter ' + str(i) , end = ' ')
         t11 = time()
         stt = i * BATCH_SIZE
         endn = min(N, stt + BATCH_SIZE)
@@ -200,15 +200,15 @@ for epoch in range(EPOCH):
         batch_label = label[stt:endn]
         batch_label = torch.from_numpy(batch_label)
         batch_label = Variable(batch_label)
-        print(batch_x.shape)
         output, matching_loss = nnet(batch_x, batch_len)
         loss = loss_crossentropy(output, batch_label) + lamb * matching_loss
         opt_.zero_grad()
         loss.backward(retain_variables = True)
         opt_.step()
         loss_average += loss.data[0]
+        print('loss is ' + str(loss.data[0]), end = ' ')
         t22 = time()
-        print(str(t22 - t11) + ' seconds', end = ' ')
+        print(str(t22 - t11) + ' seconds')
         #print('Epoch: ' + str(epoch) + ", " + str(i) + "/"+ str(iter_in_epoch)+ ': loss value is ' + str(loss.data[0]))
         ##### train
     l_his.append(loss_average)
