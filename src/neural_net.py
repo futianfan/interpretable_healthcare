@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np 
 from time import time
 torch.manual_seed(1)    # reproducible
+np.random.seed(1)
 ################################################################################################################ 
 print('STEP 1. read-in id2vec')
 f1 = lambda x:x.split()[0]
@@ -172,6 +173,25 @@ class RLP(torch.nn.Module):
     	#self.prototype = self.prototype.data.numpy()
     	#self.prototype = torch.from_numpy(self.prototype).float()
 
+
+def test_X(nnet, data_dict, data_label, epoch):
+    ## data_dict, data_label is a list, [0,1,1,1,0 0 0 0 ]
+    N_test = len(data_dict)
+    fout = open('./results/test_result_of_epoch_' + str(epoch), 'w')
+    assert len(data_dict) == len(data_label)
+    iter_num = int(np.ceil(N_test * 1.0 / BATCH_SIZE))
+    for i in range(iter_num):
+    	stt = i * BATCH_SIZE
+    	endn = min(N_test, stt + BATCH_SIZE)
+    	batch_x, batch_len = data2array(data_dict[stt:endn])
+    	if batch_x.shape[0] == 0:
+    		break
+    	output, _ = nnet(batch_x, batch_len)
+    	output_data = output.data 
+    	for j in range(output_data.shape[0]):
+    		#print(str(data_label[stt + j]) + ' ' + str(output_data[j][0]))
+    		fout.write(str(data_label[stt + j]) + ' ' + str(output_data[j][0]) + '\n')
+
 LR = 1e-2 ### 1e-2 >> 1e-3, 1e-1 < 1e-2
 nnet  = RLP(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYER, PROTOTYPE_NUM, OUT_SIZE,  BATCH_FIRST = True)
 print('Build network')
@@ -182,13 +202,18 @@ loss_crossentropy = torch.nn.CrossEntropyLoss()
 l_his = []
 
 N = len(data_dict)
-iter_in_epoch = int(np.ceil(N/BATCH_SIZE))
+iter_in_epoch = int(np.ceil(N * 1.0 /BATCH_SIZE))
 #test_N = test_query.shape[0]
 #test_iter_in_epoch = int(test_N / batch_size)
 EPOCH = 15
 lamb = 1
 for epoch in range(EPOCH):
     loss_average = 0
+    t1 = time()
+    print('test: ', end = ' ')
+    test_X(nnet, data_dict, label, epoch)
+    t2 = time()
+    print(str(t2-t1) + ' seconds. ')
     t1 = time()
     for i in range(iter_in_epoch):
         ##### train
@@ -205,8 +230,9 @@ for epoch in range(EPOCH):
         opt_.zero_grad()
         loss.backward(retain_variables = True)
         opt_.step()
-        loss_average += loss.data[0]
-        print('loss is ' + str(loss.data[0]), end = ' ')
+        loss_value = loss.data[0]
+        loss_average += loss_value
+        print('loss is ' + str(loss_value), end = ' ')
         t22 = time()
         print(str(t22 - t11) + ' seconds')
         #print('Epoch: ' + str(epoch) + ", " + str(i) + "/"+ str(iter_in_epoch)+ ': loss value is ' + str(loss.data[0]))
@@ -221,13 +247,6 @@ plt.ylabel('loss')
 plt.savefig('sgd.jpg')
 plt.show()
 '''
-
-
-
-
-
-
-
 
 
 
