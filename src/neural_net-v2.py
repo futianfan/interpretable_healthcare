@@ -107,8 +107,13 @@ class RLP(torch.nn.Module):
             batch_first = BATCH_FIRST,
             bidirectional=True
             )      
-        self.out1 = nn.Linear(HIDDEN_SIZE, OUT_SIZE)
+        self.out1 = nn.Linear(PROTOTYPE_NUM, OUT_SIZE)
         self.out2 = nn.Linear(OUT_SIZE, 2)
+
+    	## PROTOTYPE_NUM, HIDDEN_SIZE 
+    	self.prototype = torch.zeros(PROTOTYPE_NUM, HIDDEN_SIZE)
+    	self.prototype = Variable(self.prototype)
+
 
     def forward_rnn(self, X_batch, X_len):
     	batch_size = X_batch.shape[0]
@@ -134,10 +139,18 @@ class RLP(torch.nn.Module):
     	batch_size = X_batch.shape[0]
     	X_out2 = self.forward_rnn(X_batch, X_len)
         ###### prototype
-        X_out2 = X_out2.view(batch_size,HIDDEN_SIZE)
-        X_out5 = F.relu(self.out1(X_out2))
+        X_out2 = X_out2.view(batch_size,HIDDEN_SIZE,1)
+        X_out3 = X_out2.expand(batch_size, HIDDEN_SIZE, PROTOTYPE_NUM)
+        prtt = self.prototype.view(1, HIDDEN_SIZE, PROTOTYPE_NUM)
+        prtt = prtt.expand(batch_size, HIDDEN_SIZE, PROTOTYPE_NUM)
+        X_diff = (X_out3 - prtt)**2
+        X_out4 = torch.sum(X_diff, 1)  ### batch_size, PROTOTYPE_NUM
+        ###### prototype
+        X_out5 = F.relu(self.out1(X_out4))
         X_out6 = F.softmax(self.out2(X_out5))
-        return X_out6
+        matching_loss, _ = torch.min(X_out4,1)
+        matching_loss = torch.mean(matching_loss)
+        return X_out6, matching_loss
 
     def generate_prototype(self, data_dict, rule_dict):
     	for i in range(len(rule_dict)):
@@ -174,15 +187,17 @@ def test_X(nnet, data_dict, data_label, epoch):
     	batch_x, batch_len = data2array(data_dict[stt:endn])
     	if batch_x.shape[0] == 0:
     		break
-    	output = nnet(batch_x, batch_len)
+    	output, _ = nnet(batch_x, batch_len)
     	output_data = output.data 
     	for j in range(output_data.shape[0]):
     		#print(str(data_label[stt + j]) + ' ' + str(output_data[j][0]))
     		fout.write(str(data_label[stt + j]) + ' ' + str(output_data[j][0]) + '\n')
 
-LR = 3e-3 ### 1e-2 >> 1e-3, 1e-1 < 1e-2
+LR = 1e-2 ### 1e-2 >> 1e-3, 1e-1 < 1e-2
 nnet  = RLP(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYER, PROTOTYPE_NUM, OUT_SIZE,  BATCH_FIRST = True)
 print('Build network')
+nnet.generate_prototype(data_dict, rule_dict)
+print('Generate prototype')
 opt_  = torch.optim.SGD(nnet.parameters(), lr=LR)  # SGD    Adam 
 loss_crossentropy = torch.nn.CrossEntropyLoss()
 l_his = []
@@ -191,7 +206,7 @@ N = len(data_dict)
 iter_in_epoch = int(np.ceil(N * 1.0 /BATCH_SIZE))
 #test_N = test_query.shape[0]
 #test_iter_in_epoch = int(test_N / batch_size)
-EPOCH = 256
+EPOCH = 15
 lamb = 1
 for epoch in range(EPOCH):
     loss_average = 0
@@ -207,12 +222,12 @@ for epoch in range(EPOCH):
         t11 = time()
         stt = i * BATCH_SIZE
         endn = min(N, stt + BATCH_SIZE)
-        batch_x, batch_len = data2array(data_dict[stt:endn])
+        batch_x , batch_len = data2array(data_dict[stt:endn])
         batch_label = label[stt:endn]
         batch_label = torch.from_numpy(batch_label)
         batch_label = Variable(batch_label)
-        output = nnet(batch_x, batch_len)
-        loss = loss_crossentropy(output, batch_label)
+        output, matching_loss = nnet(batch_x, batch_len)
+        loss = loss_crossentropy(output, batch_label) + lamb * matching_loss
         opt_.zero_grad()
         loss.backward(retain_variables = True)
         opt_.step()
@@ -233,6 +248,8 @@ plt.ylabel('loss')
 plt.savefig('sgd.jpg')
 plt.show()
 '''
+
+
 
 
 
