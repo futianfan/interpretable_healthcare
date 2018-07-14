@@ -7,7 +7,9 @@ https://github.com/nlarusstone/corels
 
 For word2vec, we use the code (https://github.com/Adoni/word2vec_pytorch)
 
-
+src/neural_net-v1.py:  first version rule-list + lstm + prototype + binary classify
+src/neural_net-v2.py:  second version rule + bi-lstm + prototype + binary classify
+ 
 
 
 ./run.sh
