@@ -9,7 +9,7 @@ For word2vec, we use the code (https://github.com/Adoni/word2vec_pytorch)
 
 src/neural_net-v1.py:  first version rule-list + lstm + prototype + binary classify
 src/neural_net-v2.py:  second version rule + bi-lstm + prototype + binary classify
- 
+src/neural_net-v3.py:  bi-lstm + full-connect + binary classify 
 
 
 ./run.sh
