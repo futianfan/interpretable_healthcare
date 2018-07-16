@@ -75,14 +75,12 @@ print('NN training')
 
 INPUT_SIZE = 100 ## embedding size
 HIDDEN_SIZE = 50 
-OUT_SIZE = 300
+OUT_SIZE = 30
 NUM_LAYER = 1
 BATCH_FIRST = True 
 MAX_LENGTH = 200
 BATCH_SIZE = 256
 PROTOTYPE_NUM = len(rule_dict)
-KERNEL_SIZE = 10
-CNN_OUT_SIZE = MAX_LENGTH - KERNEL_SIZE + 1
 
 def data2array(data_dict):
 	leng = len(data_dict)
@@ -108,9 +106,8 @@ class RLP(torch.nn.Module):
             num_layers = NUM_LAYER,
             batch_first = BATCH_FIRST,
             bidirectional=True
-            )
-        self.conv1 = nn.Conv1d(in_channels = HIDDEN_SIZE, out_channels = HIDDEN_SIZE, kernel_size = KERNEL_SIZE, stride=1)      
-        self.out1 = nn.Linear(CNN_OUT_SIZE * HIDDEN_SIZE, OUT_SIZE)
+            )      
+        self.out1 = nn.Linear(HIDDEN_SIZE, OUT_SIZE)
         self.out2 = nn.Linear(OUT_SIZE, 2)
 
     def forward_rnn(self, X_batch, X_len):
@@ -123,20 +120,15 @@ class RLP(torch.nn.Module):
         X_len_sort = list(np.array(X_len)[dd1])
         X_batch_v = X_batch[dd1]
         pack_X_batch = torch.nn.utils.rnn.pack_padded_sequence(X_batch_v, X_len_sort, batch_first=True)
-        X_out, _ = self.rnn1(pack_X_batch, None)
-        unpack_X_out, _ = torch.nn.utils.rnn.pad_packed_sequence(X_out, batch_first=True)
-        l = unpack_X_out.shape[1]
-        if l != MAX_LENGTH:
-        	tt = MAX_LENGTH - l 
-        	tmp = torch.zeros(BATCH_SIZE, tt, HIDDEN_SIZE)
-        	tmp = Variable(tmp)
-        	unpack_X_out = torch.cat([unpack_X_out, tmp], 1)
-        #print(unpack_X_out.shape)
+        __, (X_out,_) = self.rnn1(pack_X_batch, None)
+        #X_out2 = np.concatenate((X_out[0], X_out[1]), axis = 1)
+        X_out2 = torch.cat([X_out[0], X_out[1]], 1)
+        #unpack_X_out, _ = torch.nn.utils.rnn.pad_packed_sequence(X_out, batch_first=True)
         #indx = list(np.array(X_len_sort) - 1)
         #indx = [int(v) for v in indx]
         #X_out2 = unpack_X_out[range(batch_size), indx]
-        X_out2 = unpack_X_out[dd]  
-    	return X_out2  ## batch_size, MAX_LENGTH, HIDDEN_SIZE 
+        X_out2 = X_out2[dd]  ## batch_size, HIDDEN_SIZE 
+    	return X_out2
 
     def forward(self, X_batch, X_len):
     	X_batch = torch.from_numpy(X_batch).float()
@@ -144,11 +136,8 @@ class RLP(torch.nn.Module):
     	batch_size = X_batch.shape[0]
     	X_out2 = self.forward_rnn(X_batch, X_len)
         ###### prototype
-        X_out2 = X_out2.view(batch_size,HIDDEN_SIZE,MAX_LENGTH)
-        X_out3 = self.conv1(X_out2)
-        X_out3 = X_out3.view(batch_size, HIDDEN_SIZE * CNN_OUT_SIZE)
-        #print(X_out3.shape)
-        X_out5 = F.relu(self.out1(X_out3))
+        X_out2 = X_out2.view(batch_size,HIDDEN_SIZE)
+        X_out5 = F.relu(self.out1(X_out2))
         X_out6 = F.softmax(self.out2(X_out5))
         return X_out6
 
