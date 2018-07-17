@@ -18,6 +18,7 @@ echo $s2 >> label
 cd -
 
 #python ./src/generate_X_data.py $n ./data/tmp3 ./data/snow.X
+
 python ./src/generate_X_using_feature_selection.py $n ./data/snow.Y ./data/tmp3 ./data/snow.X_new
 ./corels/corels -r 0.0000000015 -c 3 -p 1  data/snow.X_new data/label > results/corels_rule_list
 ######################## generate corels rule list ########################
@@ -30,4 +31,13 @@ python ./word2vec_tool/word2vec.py ./data/tmp3 ./data/id2vec.txt
 ## 2. LSTM + 3. rule -> prttype
   ## rule r -> x -> prttype
 
-python ./src/neural_net.py data/id2vec.txt data/tmp3 results/corels_rule_list ./data/snow.Y
+###   python ./src/neural_net.py data/id2vec.txt data/tmp3 results/corels_rule_list ./data/snow.Y
+((n=n+1))
+python ./src/neural_net.py data/id2vec.txt data/training_data_1.txt results/corels_rule_list ./data/snow.Y $n
+
+
+
+
+cat results/test_result_of_epoch_250 | awk '{ sum += $2; } END { print "average = " sum/NR }'
+
+grep ^0 results/test_result_of_epoch_250 | awk '{ sum += $2; } END { print "average = " sum/NR}'
