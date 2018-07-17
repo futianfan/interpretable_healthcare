@@ -22,6 +22,7 @@ with open(sys.argv[1], 'r') as word2vec_file:
 	lines = word2vec_file.readlines()
 	lines = lines[1:]
 	id2vec = {f1(line):f2(line) for line in lines}
+print(len(id2vec))
 
 ################################################################################################################
 print('STEP 2. read-in data, read-in rule, assign data to rule')
@@ -82,8 +83,8 @@ MAX_LENGTH = 200
 BATCH_SIZE = 256
 PROTOTYPE_NUM = len(rule_dict)
 KERNEL_SIZE = 10
-CNN_OUT_SIZE = MAX_LENGTH - KERNEL_SIZE + 1
-
+STRIDE = 3
+CNN_OUT_SIZE = int((MAX_LENGTH - KERNEL_SIZE)/STRIDE) + 1
 def data2array(data_dict):
 	leng = len(data_dict)
 	arr = np.zeros((leng, MAX_LENGTH, INPUT_SIZE),dtype = np.float32)
@@ -95,6 +96,7 @@ def data2array(data_dict):
 			try:
 				arr[i,j,:] = id2vec[str(line[j])]
 			except:
+				##print(line[j], end= '  **  ')
 				pass 
 		arr_len.append(len(line))
 	return arr, arr_len
@@ -109,7 +111,7 @@ class RLP(torch.nn.Module):
             batch_first = BATCH_FIRST,
             bidirectional=True
             )
-        self.conv1 = nn.Conv1d(in_channels = HIDDEN_SIZE, out_channels = HIDDEN_SIZE, kernel_size = KERNEL_SIZE, stride=1)      
+        self.conv1 = nn.Conv1d(in_channels = HIDDEN_SIZE, out_channels = HIDDEN_SIZE, kernel_size = KERNEL_SIZE, stride = STRIDE)      
         self.out1 = nn.Linear(CNN_OUT_SIZE * HIDDEN_SIZE, OUT_SIZE)
         self.out2 = nn.Linear(OUT_SIZE, 2)
 
@@ -216,7 +218,7 @@ for epoch in range(EPOCH):
     t1 = time()
     for i in range(iter_in_epoch):
         ##### train
-        print('Epoch ' + str(epoch)+ ': iter ' + str(i) , end = ' ')
+        #print('Epoch ' + str(epoch)+ ': iter ' + str(i) , end = ' ')
         t11 = time()
         stt = i * BATCH_SIZE
         endn = min(N, stt + BATCH_SIZE)
@@ -231,14 +233,14 @@ for epoch in range(EPOCH):
         opt_.step()
         loss_value = loss.data[0]
         loss_average += loss_value
-        print('loss is ' + str(loss_value), end = ' ')
+        #print('loss is ' + str(loss_value), end = ' ')
         t22 = time()
-        print(str(t22 - t11) + ' seconds')
+        #print(str(t22 - t11) + ' seconds')
         #print('Epoch: ' + str(epoch) + ", " + str(i) + "/"+ str(iter_in_epoch)+ ': loss value is ' + str(loss.data[0]))
         ##### train
     l_his.append(loss_average)
     t2 = time()
-    print('Epoch '+str(epoch) + ' takes ' + str(t2-t1) + ' seconds')
+    print('Epoch '+str(epoch) + ' takes ' + str(t2-t1) + ' seconds. loss is ' + str(loss_average))
 '''
 plt.plot(l_his, label='SGD')
 plt.xlabel('iteration')
