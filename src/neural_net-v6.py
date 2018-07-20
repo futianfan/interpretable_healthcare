@@ -1,6 +1,6 @@
 '''
 
-python ./src/neural_net.py data/id2vec.txt data/training_data_1.txt results/corels_rule_list ./data/snow.Y $n
+python ./src/neural_net.py data/training_data_1.txt ./data/snow.Y $n ./data/test_data_1.txt
 
 '''
 
@@ -16,28 +16,17 @@ import numpy as np
 from time import time
 torch.manual_seed(1)    # reproducible
 np.random.seed(1)
-num = int(sys.argv[5])
-################################################################################################################ 
-print('STEP 1. read-in id2vec')
-f1 = lambda x:x.split()[0]
-f2 = lambda x:np.array([float(i) for i in x.split()[1:]])
-with open(sys.argv[1], 'r') as word2vec_file:
-	lines = word2vec_file.readlines()
-	lines = lines[1:]
-	id2vec = {f1(line):f2(line) for line in lines}
-print(len(id2vec))
-
+num = int(sys.argv[3])
+###############################################################################################################
 ################################################################################################################
 print('STEP 2. read-in data, read-in rule, assign data to rule')
 ##### input:   data/tmp3, results/corels_rule_list
 ##### output:  dict{rule: data-sample}
 # read-in data:   data/tmp3
 f3 = lambda x:[int(i) for i in x.rstrip().split()]
-with open(sys.argv[2], 'r') as raw_data:
+with open(sys.argv[1], 'r') as raw_data:
 	data_lines = raw_data.readlines()
-	#data_dict = {i:f3(line) for i,line in enumerate(data_lines)}
-	data_dict = [line for i,line in enumerate(data_lines)]
-	data_dict = data_dict[1:]
+	data_dict = data_lines[1:]
 # read-in rule:   results/corels_rule_list
 f4 = lambda x: True if 'if ' in x and ' then ' in x else False
 def rule2num(string):
@@ -47,35 +36,32 @@ def rule2num(string):
 	lab = 1 if 'yes' else 0
 	return fea_num,lab
 
-## assign data to rule
-'''
-with open(sys.argv[3], 'r') as f_rule:
-	lines = f_rule.readlines()
-	lines = filter(f4,lines)
-	rule_dict = {}
-	for indx, line in enumerate(lines):
-		bgn = line.find('({')
-		endn = line.find('})')
-		rule = line[bgn + 2:endn]
-		dic = {rule2num(j)[0]:rule2num(j)[1] for j in rule.split(',')}  # 1200:1, 398:1 
-		def rule_match_data(data_index):
-			line = data_dict[data_index]
-			for fea_num,lab in dic.items():
-				if fea_num not in line and lab == 1:
-					return False
-				if fea_num in line and lab == 0:
-					return False
-			return True
-		rule_dict[indx] = filter(rule_match_data, range(len(data_dict)))  ### data_dict.keys()
-		print(len(rule_dict[indx]), end = ' ')
-print('num of matching data for each rule')
-'''
-with open(sys.argv[4], 'r') as f_label:
+with open(sys.argv[2], 'r') as f_label:
 	label_line = f_label.readlines()
 	label = []
 	for line in label_line:
 		label.append(int(line))
 label = np.array(label)
+
+small_label = []
+small_datadict = []
+for i in range(len(label)):
+	u = np.random.rand()
+	if label[i] == 0 and u > 0.157:
+		continue 
+	small_label.append(label[i])
+	small_datadict.append(data_dict[i])
+small_label = np.array(small_label)
+
+f5 = lambda x: 1 if x=='True' else 0
+with open(sys.argv[4], 'r') as f_test:
+	lines = f_test.readlines()
+	test_data_dict = lines[1:]
+	test_label = []
+	for line in test_data_dict:
+		test_label.append(f5(line.split()[0]))
+	test_label = np.array(test_label)
+
 #print(rule_dict[0])
 ################################################################################################################
 print('NN training')
@@ -100,19 +86,16 @@ def data2array(data_dict):
 	for i in range(leng):
 		line = data_dict[i]
 		line = line.split('\t')
-		admission = line[2]
+		admission = line[2].split()
 		timestamp = line[3].split()
+		assert len(admission) == len(timestamp)
 		op_data = int(line[4])
 		admission = admission[-MAX_LENGTH:]
 		timestamp = timestamp[-MAX_LENGTH:]
 		for j in range(len(admission)):
-			try:
-				adm = int(admission[j])
-				arr[i,j,adm] = 1
-				arr[i,j,-1] = op_data - int(timestamp[j])
-			except:
-				##print(line[j], end= '  **  ')
-				pass 
+			adm = int(admission[j])
+			arr[i,j,adm] = 1
+			arr[i,j,-1] = op_data - int(timestamp[j]) 
 		arr_len.append(len(admission))
 	return arr, arr_len
 
@@ -127,8 +110,8 @@ class RLP(torch.nn.Module):
             bidirectional=True
             )
         #self.conv1 = nn.Conv1d(in_channels = HIDDEN_SIZE, out_channels = OUT_CHANNEL, kernel_size = KERNEL_SIZE, stride = STRIDE)      
-        self.out1 = nn.Linear(HIDDEN_SIZE, OUT_SIZE)
-        self.out2 = nn.Linear(OUT_SIZE, 2)
+        #self.out1 = nn.Linear(HIDDEN_SIZE, OUT_SIZE)
+        #self.out2 = nn.Linear(OUT_SIZE, 2)
         self.out3 = nn.Linear(HIDDEN_SIZE,2)
 
     def forward_rnn(self, X_batch, X_len):
@@ -136,8 +119,7 @@ class RLP(torch.nn.Module):
     	#X_batch = Variable(torch.from_numpy(X_batch).float())
     	dd1 = sorted(range(len(X_len)), key=lambda k: X_len[k], reverse = True)
         dd = [0 for i in range(len(dd1))]
-        for i,j in enumerate(dd1):
-            dd[j] = i
+        for i,j in enumerate(dd1):  dd[j] = i
         X_len_sort = list(np.array(X_len)[dd1])
         X_batch_v = X_batch[dd1]
         pack_X_batch = torch.nn.utils.rnn.pack_padded_sequence(X_batch_v, X_len_sort, batch_first=True)
@@ -151,11 +133,8 @@ class RLP(torch.nn.Module):
     	X_batch = Variable(X_batch)
     	batch_size = X_batch.shape[0]
     	X_out2 = self.forward_rnn(X_batch, X_len)
-        ###### prototype
-        X_out2 = X_out2.view(batch_size,HIDDEN_SIZE)
         ##X_out5 = F.relu(self.out1(X_out2))
         ##X_out6 = F.softmax(self.out2(X_out5))
-
         X_out6 = F.softmax(self.out3(X_out2))
         return X_out6
 
@@ -200,14 +179,14 @@ def test_X(nnet, data_dict, data_label, epoch):
     		#print(str(data_label[stt + j]) + ' ' + str(output_data[j][0]))
     		fout.write(str(data_label[stt + j]) + ' ' + str(output_data[j][0]) + '\n')
 
-LR = 3e-3 ### 1e-2 >> 1e-3, 1e-1 < 1e-2
+LR = 4e-3 ### 1e-2 >> 1e-3, 1e-1 < 1e-2
 nnet  = RLP(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYER, PROTOTYPE_NUM, OUT_SIZE,  BATCH_FIRST = True)
 print('Build network')
 opt_ = torch.optim.SGD(nnet.parameters(), lr=LR)  # SGD    Adam 
 loss_crossentropy = torch.nn.CrossEntropyLoss()
 l_his = []
 
-N = len(data_dict)
+N = len(small_datadict)
 iter_in_epoch = int(np.ceil(N * 1.0 /BATCH_SIZE))
 #test_N = test_query.shape[0]
 #test_iter_in_epoch = int(test_N / batch_size)
@@ -215,10 +194,11 @@ EPOCH = 1000
 lamb = 1
 for epoch in range(EPOCH):
     loss_average = 0        
-    if epoch > 6 and epoch % 4 == 0:
+    if epoch > 0 and epoch % 2 == 0:
     	t1 = time()
     	print('test: ', end = ' ')
-    	test_X(nnet, data_dict, label, epoch)
+    	#test_X(nnet, data_dict, label, epoch)
+    	test_X(nnet, test_data_dict, test_label, epoch)
     	t2 = time()
     	print(str(t2-t1) + ' sec. ')
     t1 = time()
@@ -228,14 +208,15 @@ for epoch in range(EPOCH):
         t11 = time()
         stt = i * BATCH_SIZE
         endn = min(N, stt + BATCH_SIZE)
-        batch_x, batch_len = data2array(data_dict[stt:endn])
-        batch_label = label[stt:endn]
+        batch_x, batch_len = data2array(small_datadict[stt:endn])
+        batch_label = small_label[stt:endn]
         batch_label = torch.from_numpy(batch_label)
         batch_label = Variable(batch_label)
         output = nnet(batch_x, batch_len)
         loss = loss_crossentropy(output, batch_label)
         opt_.zero_grad()
-        loss.backward(retain_variables = True)
+        #loss.backward(retain_variables = True)
+        loss.backward()
         opt_.step()
         loss_value = loss.data[0]
         loss_average += loss_value
@@ -246,7 +227,7 @@ for epoch in range(EPOCH):
         ##### train
     l_his.append(loss_average)
     t2 = time()
-    print('Epoch '+str(epoch) + ': ' + str(t2-t1) + ' sec. loss:: ' + str(loss_average))
+    print('Epoch '+str(epoch) + ': ' + str(int(t2-t1)) + ' sec. loss: ' + str(loss_average))
 '''
 plt.plot(l_his, label='SGD')
 plt.xlabel('iteration')

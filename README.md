@@ -13,6 +13,8 @@ src/neural_net-v3.py:  bi-lstm + full-connect + binary classify
 
 v4: final state => hidden state
 v5: full-connect => conv1d
+v6: embedding => one-hot  add dim of "time stamp", optimal AUC = 0.64
+
 
 ./run.sh
 
