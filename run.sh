@@ -8,6 +8,10 @@ sed '1d' $INPUT_FILE | awk -F "\t" '{print $3}' > ./data/tmp3   ### tmp
 n=`python src/findmax_N.py ./data/tmp3`
 ((n=n+1))
 
+sed '1d' data/test_data_1.txt | awk -F "\t" '{print $3}' > ./data/test_data_1_3.txt
+sed '1d' data/test_data_1.txt | awk '{print $1}' | sed 's/True/1/;s/False/0/' > ./data/tmp1
+cp ./data/tmp1 ./data/test_snow.Y
+
 cd data
 s1=`tr '\n' ' ' < tmp1`
 s2=`tr '\n' ' ' < tmp2`
@@ -35,14 +39,16 @@ python ./word2vec_tool/word2vec.py ./data/tmp3 ./data/id2vec.txt
 ((n=n+1))
 ## python ./src/neural_net.py data/id2vec.txt data/training_data_1.txt results/corels_rule_list ./data/snow.Y $n
 ## python ./src/neural_net.py data/training_data_1.txt ./data/snow.Y $n
-python ./src/neural_net.py data/training_data_1.txt ./data/snow.Y $n ./data/test_data_1.txt
+## python ./src/neural_net.py data/training_data_1.txt ./data/snow.Y $n ./data/test_data_1.txt
+#python ./src/neural_net.py data/training_model_by_word2vec_1.vector data/tmp3 results/corels_rule_list ./data/snow.Y ./data/test_data_1_3.txt
+python ./src/neural_net.py data/training_model_by_word2vec_1.vector data/tmp3 results/corels_rule_list ./data/snow.Y ./data/test_data_1_3.txt ./data/test_snow.Y
 
 
 
 
 cat results/test_result_of_epoch_5 | awk '{ sum += $2; } END { print "average = " sum/NR }'
 
-grep ^0 results/test_result_of_epoch_6 | awk '{ sum += $2; } END { print "average = " sum/NR}'
-grep ^1 results/test_result_of_epoch_6 | awk '{ sum += $2; } END { print "average = " sum/NR}'
+grep ^0 results/test_result_of_epoch_36 | awk '{ sum += $2; } END { print "average = " sum/NR}'
+grep ^1 results/test_result_of_epoch_36 | awk '{ sum += $2; } END { print "average = " sum/NR}'
 
 
