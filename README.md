@@ -1,7 +1,6 @@
 INTERPRETABLE DEEP LEARNING FOR HEALTHCARE
 
 
-
 For rule list part, we directly use the code from:
 https://github.com/nlarusstone/corels
 
@@ -14,7 +13,7 @@ src/neural_net-v3.py:  bi-lstm + full-connect + binary classify
 v4: final state => hidden state
 v5: full-connect => conv1d
 v6: embedding => one-hot  add dim of "time stamp", optimal AUC = 0.64
-
+v7: modify based on "v2"  
 
 ./run.sh
 

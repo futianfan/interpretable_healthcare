@@ -33,11 +33,16 @@ python ./word2vec_tool/word2vec.py ./data/tmp3 ./data/id2vec.txt
 
 ###   python ./src/neural_net.py data/id2vec.txt data/tmp3 results/corels_rule_list ./data/snow.Y
 ((n=n+1))
-python ./src/neural_net.py data/id2vec.txt data/training_data_1.txt results/corels_rule_list ./data/snow.Y $n
+## python ./src/neural_net.py data/id2vec.txt data/training_data_1.txt results/corels_rule_list ./data/snow.Y $n
+## python ./src/neural_net.py data/training_data_1.txt ./data/snow.Y $n
+python ./src/neural_net.py data/training_data_1.txt ./data/snow.Y $n ./data/test_data_1.txt
 
 
 
 
-cat results/test_result_of_epoch_250 | awk '{ sum += $2; } END { print "average = " sum/NR }'
+cat results/test_result_of_epoch_5 | awk '{ sum += $2; } END { print "average = " sum/NR }'
 
-grep ^0 results/test_result_of_epoch_250 | awk '{ sum += $2; } END { print "average = " sum/NR}'
+grep ^0 results/test_result_of_epoch_6 | awk '{ sum += $2; } END { print "average = " sum/NR}'
+grep ^1 results/test_result_of_epoch_6 | awk '{ sum += $2; } END { print "average = " sum/NR}'
+
+
