@@ -324,7 +324,7 @@ iter_in_epoch = int(np.ceil(N * 1.0 /BATCH_SIZE))
 EPOCH = 450
 lamb = 4e-3
 for epoch in range(EPOCH):
-    if epoch >= 0 and epoch % 3 == 0:
+    if epoch > 6 and epoch % 3 == 0:
         t1 = time()
         #print('test: ', end = ' ')
         #test_X(nnet, data_dict, label, epoch)
