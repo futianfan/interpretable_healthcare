@@ -22,6 +22,9 @@ v11: based on v10, embedding+cnn+lstm+full-connect => embedding+cnn+lstm+highway
 AUC = 0.671+
 v12: based on v11, embedding+cnn+lstm+highway+full-connect => embedding+cnn+lstm+highway+prototype+full-connect, doesn't work.
 v13: see v10. same with v10
+v14: based on v10/13, embedding + cnn + lstm + full-connect, then save the output of LSTM in ./data/
+v15: use the output of v14, prototype. 
+v14 + v15:
 
 ./run.sh
 
