@@ -19,7 +19,8 @@ v9: embedding+lstm+prototype+softmax, don't success
 v10: based on v8, embedding+lstm => embedding+cnn+lstm.  
  AUC = 0.672+
 v11: based on v10, embedding+cnn+lstm+full-connect => embedding+cnn+lstm+highway+full-connect.   
-AUC = 0.669+
+AUC = 0.671+
+v12: based on v11, embedding+cnn+lstm+highway+full-connect => embedding+cnn+lstm+highway+prototype+full-connect, doesn't work.
 
 
 ./run.sh
