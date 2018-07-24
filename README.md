@@ -17,11 +17,11 @@ v7: modify based on "v2", it doesn't work now
 v8: based on v6:  one-hot+timestamp => embedding, optimal AUC = 0.61, converge very slowly.
 v9: embedding+lstm+prototype+softmax, don't success
 v10: based on v8, embedding+lstm => embedding+cnn+lstm.  
- AUC = 0.672+
+ AUC = 0.672+ => 0.684+ (lr=1e-1,version 13)
 v11: based on v10, embedding+cnn+lstm+full-connect => embedding+cnn+lstm+highway+full-connect.   
 AUC = 0.671+
 v12: based on v11, embedding+cnn+lstm+highway+full-connect => embedding+cnn+lstm+highway+prototype+full-connect, doesn't work.
-
+v13: see v10. same with v10
 
 ./run.sh
 
