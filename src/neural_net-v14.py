@@ -1,6 +1,8 @@
 '''
 
-python ./src/neural_net.py data/training_model_by_word2vec_1.vector data/tmp3 results/corels_rule_list ./data/snow.Y ./data/test_data_1_3.txt ./data/test_snow.Y
+python ./src/neural_net.py data/training_model_by_word2vec_1.vector data/tmp3 \
+results/corels_rule_list ./data/snow.Y ./data/test_data_1_3.txt ./data/test_snow.Y \
+./data/train_lstm_output.npy ./data/test_lstm_output.npy ./results/rule_data_list
 
 '''
 
@@ -78,26 +80,36 @@ def rule2num(string):
 	return fea_num,lab
 
 ## assign data to rule
-with open(sys.argv[3], 'r') as f_rule:
-	lines = f_rule.readlines()
-	lines = filter(f4,lines)
-	rule_dict = {}
-	for indx, line in enumerate(lines):
-		bgn = line.find('({')
-		endn = line.find('})')
-		rule = line[bgn + 2:endn]
-		dic = {rule2num(j)[0]:rule2num(j)[1] for j in rule.split(',')}  # 1200:1, 398:1 
-		def rule_match_data(data_index):
-			line = data_dict[data_index]
-			for fea_num,lab in dic.items():
-				if fea_num not in line and lab == 1:
-					return False
-				if fea_num in line and lab == 0:
-					return False
-			return True
-		rule_dict[indx] = filter(rule_match_data, range(len(data_dict)))  ### data_dict.keys()
-		print(len(rule_dict[indx]), end = ' ')
+f_rule_out = open(sys.argv[9], 'w')
+print(len(data_dict))
+with open(sys.argv[3], 'r') as f_rule:  ## 'results/corels_rule_list'    
+    lines = f_rule.readlines()
+    lines = filter(f4,lines)
+    rule_dict = {}
+    for indx, line in enumerate(lines):
+        bgn = line.find('({')
+        endn = line.find('})')
+        rule = line[bgn + 2:endn]
+        dic = {rule2num(j)[0]:rule2num(j)[1] for j in rule.split(',')}  # 1200:1, 398:1 
+        #print(indx)
+        def rule_match_data(data_index):
+            line = data_dict[data_index]
+            for fea_num,lab in dic.items():
+                if fea_num not in line and lab == 1:
+                    return False
+                if fea_num in line and lab == 0:
+                    return False
+            return True
+        rule_dict[indx] = filter(rule_match_data, range(len(data_dict)))  ### data_dict.keys()
+        string = [str(i) for i in rule_dict[indx]]
+        string = ' '.join(string)
+        f_rule_out.write(string + '\n')
+        print(len(rule_dict[indx]), end = ' ')
 print('num of matching data for each rule')
+f_rule_out.close()
+print(len(rule_dict))
+
+
 
 #print(rule_dict[0])
 ################################################################################################################
@@ -270,6 +282,7 @@ class RLP(torch.nn.Module):
     		data = []
     		for j in rule_dict[i]:
     			data.append(data_dict[j])
+            #data = [data_dict[j] for j in rule_dict[i]]
     		leng = len(data)
     		T = np.ceil(leng * 1.0 / BATCH_SIZE)
     		T = int(T)
@@ -312,6 +325,26 @@ def test_X(nnet, data_dict, data_label, epoch):
     auc = roc_auc_score(y_label, y_pred)
     print('AUC of Epoch ' + str(epoch) + ' is ' + str(auc)[:5])
 
+def save_lstm_output_for_testdata(nnet, data_dict, data_label, fname):
+    ## data_dict, data_label is a list, [0,1,1,1,0 0 0 0 ]
+    N_test = len(data_dict)
+    #fout = open('./results/test_result_of_epoch_' + str(epoch), 'w')
+    assert len(data_dict) == len(data_label)
+    iter_num = int(np.ceil(N_test * 1.0 / BATCH_SIZE))
+    for i in range(iter_num):
+        stt = i * BATCH_SIZE
+        endn = min(N_test, stt + BATCH_SIZE)
+        batch_x, batch_len = data2array(data_dict[stt:endn])
+        if batch_x.shape[0] == 0:
+            break
+        output = nnet.forward_A(batch_x, batch_len)
+        if i == 0:
+            output2 = output 
+        else: 
+            output2 = torch.cat((output2, output), 0)
+    output2 = output2.data 
+    output2 = np.array(output2)
+    np.save(fname, output2)
 
 LR = 1e-1 ### 4e-3 is ok,
 EPOCH = 39
@@ -365,7 +398,7 @@ for epoch in range(EPOCH):
     t2 = time()
     print('Epoch '+str(epoch) + ' takes ' + str(int(t2-t1)) + ' sec. loss: ' + str(loss_average)[:6])
 
-###  save data
+###  save  train data
 for i in range(iter_in_epoch):
     stt = i * BATCH_SIZE
     endn = min(N,stt + BATCH_SIZE)
@@ -377,12 +410,13 @@ for i in range(iter_in_epoch):
         output2 = torch.cat((output2, output), 0)
 output2 = output2.data 
 output2 = np.array(output2)
-np.save('./data/lstm_output.npy', output2)
+np.save(sys.argv[7], output2)
+###  save  train data
+######################################################
+###### save  test data
+save_lstm_output_for_testdata(nnet, test_data_dict, test_label, sys.argv[8])
+###### save  test data
 
-
-
-
-###  save data
 
 '''
 plt.plot(l_his, label='SGD')
