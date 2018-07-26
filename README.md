@@ -23,8 +23,9 @@ AUC = 0.671+
 v12: based on v11, embedding+cnn+lstm+highway+full-connect => embedding+cnn+lstm+highway+prototype+full-connect, doesn't work.
 v13: see v10. same with v10
 v14: based on v10/13, embedding + cnn + lstm + full-connect, then save the output of LSTM in ./data/
-v15: use the output of v14, prototype. AUC=0.676 (highway=1:0.676,2:0.676,3:0.678+, 4:0.636+)
+v15: use the output of v14, prototype. AUC=0.676 (highway=1:0.676,2:0.676,3:0.678+, 4:0.636+).   don't BP grad for prototype.
 v14 + v15:
+v16: same with v15, but do BP gradient for prototype. it's very slow, AUC=0.672.
 
 ./run.sh
 
