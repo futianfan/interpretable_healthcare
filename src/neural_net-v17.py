@@ -106,6 +106,8 @@ class RLP(torch.nn.Module):
         X_out3 = X_out2.expand(batch_size, HIDDEN_SIZE, PROTOTYPE_NUM)
         prtt = self.prototype.view(1, HIDDEN_SIZE, PROTOTYPE_NUM)
 
+
+
         #### print prototype
         p_out = prtt.data 
         p_out = p_out[0,:,:]
@@ -170,6 +172,40 @@ class RLP(torch.nn.Module):
     	#self.prototype = self.prototype.data.numpy()
     	#self.prototype = torch.from_numpy(self.prototype).float()
 
+    ## k-th rule
+    def find_rule_nearest_neighbor(self, k, rule_dict, data_dict):
+    	#print(str(k) + '-th rule', end = ' ')
+    	#print(rule_dict[k][:10])
+    	data = data_dict[rule_dict[k]]
+    	leng = len(data)
+    	T = np.ceil(leng * 1.0 / BATCH_SIZE)
+    	T = int(T)
+    	total_N = len(rule_dict[k])
+    	correct_N = 0
+    	for j in range(T):
+    		bgn = j * BATCH_SIZE
+    		endn = min(leng, bgn + BATCH_SIZE)
+    		if bgn >= endn:
+    			continue
+    		batch_data = data[bgn:endn]
+    		batch_size = endn - bgn 
+    		batch_data = Variable(torch.from_numpy(batch_data))
+    		batch_X_out = self.forward_highway(batch_data)  ## batch_size, hidden_size 
+    		batch_X_out_expand = batch_X_out.view(batch_size, HIDDEN_SIZE, 1)
+    		batch_X_out_expand = batch_X_out_expand.expand(batch_size, HIDDEN_SIZE, PROTOTYPE_NUM)
+
+    		prtt = self.prototype.view(1, HIDDEN_SIZE, PROTOTYPE_NUM)
+    		prtt = prtt.expand(batch_size, HIDDEN_SIZE, PROTOTYPE_NUM)
+    		X_diff = (batch_X_out_expand - prtt)**2
+    		X_out4 = torch.sum(X_diff, 1)  ## batch_size, PROTOTYPE_NUM 
+    		_, indx = torch.min(X_out4, 1)
+    		#X_out4 = torch.cat([X_out4[:,:39], X_out4[:,40:]] , 1)
+    		#print(indx.data.numpy())
+    		correct_N += sum(indx.data.numpy() == k)
+    	print(str(k) + ' & ' + str(correct_N) + ' & ' + str(total_N) + ' \\\\ ')
+
+
+
 
 def test_X(nnet, data_dict, data_label, epoch):
     ## data_dict, data_label is a list, [0,1,1,1,0 0 0 0 ]
@@ -210,7 +246,7 @@ N = len(train_data)
 iter_in_epoch = int(np.ceil(N * 1.0 /BATCH_SIZE))
 #test_N = test_query.shape[0]
 #test_iter_in_epoch = int(test_N / batch_size)
-EPOCH = 45
+EPOCH = 15 ## 45
 lamb = 0
 for epoch in range(EPOCH):
     if epoch >= 5 and epoch % 5 == 0:
@@ -260,6 +296,9 @@ for epoch in range(EPOCH):
     l_his.append(loss_average)
     t2 = time()
     print('Epoch '+str(epoch) + ' takes ' + str((t2-t1)) + ' sec. loss: ' + str(loss_average)[:6] )
+
+for i in range(len(rule_dict)):
+	nnet.find_rule_nearest_neighbor(i, rule_dict, train_data)
 
 '''
 plt.plot(l_his, label='SGD')
