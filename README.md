@@ -45,6 +45,9 @@ v14 + v15:
 v16: same with v15, but do BP gradient for prototype. it's very slow, AUC=0.672.
 
 v17: it is based on v15, add some test procedure
+v18: encoder-decoder seq2seq 
+
+
 
 ./run.sh
 
