@@ -146,30 +146,6 @@ def data2array(data_dict):
     return arr, arr_len  ### batch size, MAX_LENGTH, INPUT_SIZE
 
 
-def beam_search(X, beam_width = 10):
-    leng, N = X.shape 
-    log_X = np.log(X)
-
-    ### first one
-    dic = {str(i):X[0,i] for i in range(N)}
-    dic_value = [dic[i] for i in dic]
-    dic_value.sort()
-    threshold = dic_value[-beam_width]
-    dic2 = {i:dic[i] for i in dic if dic[i] >= threshold}
-
-    ###  2 to leng
-    for i in range(1,leng):
-        ### 1. expand dictionary
-        dic = {k + ' ' + str(j):dic2[k] + X[i,j] for k in dic2 for j in range(N)}
-        ### 2. shrink to top-k 
-        dic_value = [dic[i] for i in dic]
-        dic_value.sort()
-        threshold = dic_value[-beam_width]
-        dic2 = {i:dic[i] for i in dic if dic[i] >= threshold}
-    return [i for i in dic2]
-
-
-
 class RLP(torch.nn.Module):
     def __init__(self, INPUT_SIZE, HIDDEN_SIZE, NUM_LAYER, PROTOTYPE_NUM, OUT_SIZE,  BATCH_FIRST = True):
         super(RLP, self).__init__()   
@@ -249,22 +225,16 @@ class RLP(torch.nn.Module):
         pack_X_batch = torch.nn.utils.rnn.pack_padded_sequence(X_batch_v, X_len_sort, batch_first=True)   ## pack 
         X_out3, _ = self.decoder_rnn(pack_X_batch, None)
         X_out4 = torch.nn.utils.rnn.pad_packed_sequence(X_out3)  ## unpack 
+        #print(X_out4[1]) 
         data = X_out4[0]
         data = data.permute(1,0,2)
         data = data[dd]
+        #print(data)
         data = F.softmax(data,2)
         X_out5 = data[0,:X_len[0],:]
         for i in range(1,batch_size):
             X_out5 = torch.cat([X_out5, data[i,:X_len[i],:]], 0)
-            lst = beam_search(data[i,:X_len[i],:].data, 10)
-            for j in lst:
-                print(j)
-            print()
-            print()
         return X_out5 
-
-
-
 
 
 LR = 1e-3 ### 4e-3 is ok,
