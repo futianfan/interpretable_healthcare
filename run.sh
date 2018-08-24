@@ -43,7 +43,8 @@ python ./word2vec_tool/word2vec.py ./data/tmp3 ./data/id2vec.txt
 #python ./src/neural_net.py data/training_model_by_word2vec_1.vector data/tmp3 results/corels_rule_list ./data/snow.Y ./data/test_data_1_3.txt
 python ./src/neural_net.py data/training_model_by_word2vec_1.vector data/tmp3 results/corels_rule_list ./data/snow.Y ./data/test_data_1_3.txt ./data/test_snow.Y
 
-
+### !!find key disease!!
+python ./src/find_key_factor.py data/tmp3 50 data/key_factor 
 
 
 cat results/test_result_of_epoch_5 | awk '{ sum += $2; } END { print "average = " sum/NR }'
