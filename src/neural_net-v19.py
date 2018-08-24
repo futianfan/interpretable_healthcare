@@ -1,5 +1,5 @@
 '''
-python ./src/neural_net.py data/training_model_by_word2vec_1.vector data/tmp3 ./data/snow.Y ./data/test_data_1_3.txt ./data/test_snow.Y
+python ./src/neural_net-v19.py data/training_model_by_word2vec_1.vector data/tmp3 ./data/snow.Y ./data/test_data_1_3.txt ./data/test_snow.Y ./data/key_factor
 '''
 
 from __future__ import print_function
@@ -71,7 +71,24 @@ OUT_CHANNEL = INPUT_SIZE
 MAXPOOL_NUM = 3
 INPUT_SIZE_RNN = OUT_CHANNEL
 Cluster_num = 30
-interpret_OUT_SIZE = 30
+################################################################################################################
+f_key_factor = open(sys.argv[5], 'r')
+line = f_key_factor.readline()
+key_indx = [int(i) for i in line.split()]
+interpret_OUT_SIZE = len(key_indx)
+
+def calculate_statistics(data_item, key_factor_indx):
+    leng = len(data_item)
+    ll = len(key_factor_indx)
+    stat = [0.0 for i in range(ll)]
+    for i in range(leng):
+        ff = lambda x: 1 if x in data_item[i] else 0
+        for j in range(ll):
+            stat[j] += ff(j)
+    ret = np.array([i * 1.0 / leng for i in stat])
+    print(ret)
+    return ret.reshape(1, -1)
+
 
 
 def data2array(data_dict):
@@ -157,6 +174,9 @@ class RLP(torch.nn.Module):
         ### full connected
         X_out6 = F.softmax(self.out3(X_out2))
         return X_out6
+    def forward_interpret(self, X_batch):
+        X_out = F.sigmoid(self.interpret_out(X_batch))
+        return X_out 
 
 def test_X(nnet, data_dict, data_label, epoch):
     ## data_dict, data_label is a list, [0,1,1,1,0 0 0 0 ]
@@ -205,6 +225,7 @@ nnet  = RLP(INPUT_SIZE, HIDDEN_SIZE, NUM_LAYER, OUT_SIZE, interpret_OUT_SIZE, BA
 print('Build network')
 opt_  = torch.optim.SGD(nnet.parameters(), lr=LR)  # SGD    Adam 
 loss_crossentropy = torch.nn.CrossEntropyLoss()
+loss_mse = torch.nn.MSELoss()
 l_his = []
 
 iter_in_epoch = int(np.ceil(N * 1.0 /BATCH_SIZE))
@@ -253,23 +274,32 @@ for epoch in range(EPOCH):
         else:
             X_code = torch.cat([X_code, hidden_state], 0)    
     ### re-cluster
+    print('flag 0')
 
     kmeans = KMeans(n_clusters=Cluster_num, random_state=0).fit(X_code)  ##  http://scikit-learn.org/stable/modules/clustering.html
+    print('flag 0.5')
     labels = list(kmeans.labels_) 
     ### get centroid and target value for each cluster 
     ### 
     cluster2data = data_index_for_each_cluster(labels)
+    print('flag 2')
     centroid_matrix = Variable(torch.zeros(Cluster_num, HIDDEN_SIZE))
-    target_value = Variable(torch.zeros(Cluster_num, interpret_OUT_SIZE))
+    target_value = np.zeros((Cluster_num, interpret_OUT_SIZE), dtype = float)
     for i in range(Cluster_num):
         centroid_matrix[i,:] = torch.mean(X_code[cluster2data[i]], 0).view(1,-1)
-        
-
-
-
-
-
-
+        indx = cluster2data[i]
+        dat = data_dict[index]
+        target_value[i,:] = calculate_statistics(dat, key_indx)
+    print('flag 3')
+    target_value = Variable(torch.from_numpy(target_value))
+    output = nnet.forward_interpret(centroid_matrix)
+    loss = loss_mse(output, target_value)
+    opt_.zero_grad()
+    loss.backward()
+    opt_.step()
+    loss_value = loss.data[0]
+    print('MSE loss: ' + str(loss_value))
+    
 
 
 
@@ -286,7 +316,6 @@ plt.ylabel('loss')
 plt.savefig('sgd.jpg')
 plt.show()
 '''
-
 
 
 
