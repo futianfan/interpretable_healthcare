@@ -9,8 +9,8 @@ n=`python src/findmax_N.py ./data/tmp3`
 ((n=n+1))
 
 sed '1d' data/test_data_1.txt | awk -F "\t" '{print $3}' > ./data/test_data_1_3.txt
-sed '1d' data/test_data_1.txt | awk '{print $1}' | sed 's/True/1/;s/False/0/' > ./data/tmp4
-cp ./data/tmp4 ./data/test_snow.Y
+sed '1d' data/test_data_1.txt | awk '{print $1}' | sed 's/True/1/;s/False/0/' > ./data/tmp1
+cp ./data/tmp1 ./data/test_snow.Y
 
 cd data
 s1=`tr '\n' ' ' < tmp1`
@@ -23,7 +23,7 @@ cd -
 
 #python ./src/generate_X_data.py $n ./data/tmp3 ./data/snow.X
 
-python2 ./src/generate_X_using_feature_selection.py $n ./data/snow.Y ./data/tmp3 ./data/snow.X_new
+python ./src/generate_X_using_feature_selection.py $n ./data/snow.Y ./data/tmp3 ./data/snow.X_new
 ./corels/corels -r 0.0000000015 -c 3 -p 1  data/snow.X_new data/label > results/corels_rule_list
 ######################## generate corels rule list ########################
 
