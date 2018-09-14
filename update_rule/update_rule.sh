@@ -24,6 +24,8 @@ wc -l ./data/training_data_1.txt ./data/train_data
 ## FOR iteration
 END=5
 for((i=1;i<=END;i++)); do
+
+	
 sed '1d' $INPUT_FILE | awk '{print $1}' | sed 's/True/1/;s/False/0/' > ./data/training_label
 sed '1d' $INPUT_FILE | awk '{print $1}' | sed 's/True/0/;s/False/1/' > ./data/tmp2
 sed '1d' $INPUT_FILE | awk -F "\t" '{print $3}' > ./data/training_feature   ### tmp 

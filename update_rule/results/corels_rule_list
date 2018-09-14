@@ -146,7 +146,7 @@ else ({label:No})
 
 writing optimal rule list to: ../logs/for-training_selected_feature-curious_obj-with_prefix_perm_map-no_minor-removed=none-max_num_nodes=100000-c=0.0000000-v=0-f=1000-opt.txt
 
-final total time: 1.965633
+final total time: 2.614332
 
 delete rules
 delete labels
