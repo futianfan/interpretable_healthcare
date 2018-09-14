@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 ########################################################
 #####       data => rule, normalize
 ########################################################
@@ -60,7 +59,7 @@ python2 ./src/rcnn_fc_softmax.py data/training_model_by_word2vec_1.vector data/t
 python2 ./src/prototype.py results/rule_data_list ./data/train_lstm_output.npy ./data/training_label  ./data/test_lstm_output.npy ./data/test_label ./results/similarity 
 
 python2 ./src/add_data.py $INPUT_FILE results/rule_data_list results/similarity tmp 5
-mv tmp $INPUT_FILE
+mv tmp $	
 done
 ## END FOR
 

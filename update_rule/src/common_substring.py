@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-python src/common_substring.py --data_file ./data/train_data --rule_data_index ./results/rule_data_list
+python src/common_substring.py --data_file ./data/train_data --rule_data_index ./results/rule_data_list --dictionary ./data/SNOW_vocabMAP.txt
 '''
 
 import argparse
@@ -66,14 +66,20 @@ def largest_common_substring_in_a_cluster(data):
 	return X 
 
 
+def code2name(dic, lst):
+	lst =  [dic[i] for i in lst]
+	return ' -> '.join(lst)
+
 ## print(os.getcwd())
 parser = argparse.ArgumentParser()
 parser.add_argument("--data_file", help=" training data file ", type=str)
 parser.add_argument("--rule_data_index", help="rule data index file", type=str)
+parser.add_argument("--dictionary", help="dictionary: code => diagnois", type=str)
 args = parser.parse_args()
 
 fp_data = open(args.data_file, 'r')
 fp_rule = open(args.rule_data_index, 'r')
+dictionary = open(args.dictionary, 'r')
 
 lines = fp_data.readlines()
 lines = lines[1:]
@@ -83,6 +89,10 @@ rules = fp_rule.readlines()
 rules = [[int(i) for i in rule.split()] for rule in rules]
 num_of_rules = len(rules)
 
+dict_line = dictionary.readlines()
+dic = {int(line.rstrip().split('\t')[0]):line.rstrip().split('\t')[1] for line in dict_line}
+#print(dic[1799])
+#exit()
 
 '''
 for rule_num in range(num_of_rules):
@@ -143,7 +153,16 @@ for rule_num in range(num_of_rules):
 	##print(str(rule_num) + '-th rule:' + str(leng) + ' points, max-common lens:' + str(len(X)) + ', cost ' + str(time() - t1)[:5] + 'sec')
 
 
-
+## 2153,4268,9458,10579,10819
+## sed -n "10821p" data/training_data_1.txt | awk '{print $1}'
+rule = rules[19]
+print(rule)
+data = [lines[i] for i in rule]
+data2 = remove_repetition(data)
+X = largest_common_substring_in_a_cluster(data2)
+print(code2name(dic, X))
+for i in data2:
+	print(code2name(dic, i))
 
 
 
