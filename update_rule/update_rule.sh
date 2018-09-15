@@ -25,13 +25,13 @@ wc -l ./data/training_data_1.txt ./data/train_data
 END=5
 for((i=1;i<=END;i++)); do
 
+
 	
 sed '1d' $INPUT_FILE | awk '{print $1}' | sed 's/True/1/;s/False/0/' > ./data/training_label
 sed '1d' $INPUT_FILE | awk '{print $1}' | sed 's/True/0/;s/False/1/' > ./data/tmp2
 sed '1d' $INPUT_FILE | awk -F "\t" '{print $3}' > ./data/training_feature   ### tmp 
 n=`python src/findmax_N.py ./data/training_feature`
 ((n=n+1))
-
 
 cd data
 s1=`tr '\n' ' ' < training_label`
@@ -65,10 +65,16 @@ mv tmp $
 done
 ## END FOR
 
+######################################################
+### pure rule learning
+./src/pure_rule_learning.py
 
+### logistic regression
+./src/logistic_regression.py
+#####################################################
 
-
-
-
+### merge rule 
+python src/union_rule.py --origin_rule_file results/rule_data_list --united_rule_file results/union_rule_data_list --union_num 2
+python2 ./src/prototype.py results/union_rule_data_list ./data/train_lstm_output.npy ./data/training_label  ./data/test_lstm_output.npy ./data/test_label ./results/similarity 
 
 
