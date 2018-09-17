@@ -1,6 +1,6 @@
 '''
 
-python2 ./src/prototype.py results/rule_data_list ./data/train_lstm_output.npy ./data/training_label  ./data/test_lstm_output.npy ./data/test_label  ./results/similarity
+python2 ./src/prototype_rule_plus_random.py results/rule_data_list ./data/train_lstm_output.npy ./data/training_label  ./data/test_lstm_output.npy ./data/test_label  ./results/similarity
 
 '''
 
@@ -77,7 +77,7 @@ class RLP(torch.nn.Module):
 
         #self.out1 = nn.Linear(PROTOTYPE_NUM, OUT_SIZE)
         #self.out2 = nn.Linear(OUT_SIZE, 2)
-        self.out3 = nn.Linear(PROTOTYPE_NUM, 2)
+        self.out3 = nn.Linear(PROTOTYPE_NUM * 2, 2)
     	## PROTOTYPE_NUM, HIDDEN_SIZE 
     	#self.prototype = torch.randn(PROTOTYPE_NUM, HIDDEN_SIZE)
     	#self.prototype = Variable(self.prototype, requires_grad = True)
@@ -104,9 +104,9 @@ class RLP(torch.nn.Module):
         X_out2 = self.forward_highway(X_batch)
 
         X_out2 = X_out2.view(batch_size,HIDDEN_SIZE,1)
-        X_out3 = X_out2.expand(batch_size, HIDDEN_SIZE, PROTOTYPE_NUM)
-        prtt = self.prototype.view(1, HIDDEN_SIZE, PROTOTYPE_NUM)
-        prtt = prtt.expand(batch_size, HIDDEN_SIZE, PROTOTYPE_NUM)
+        X_out3 = X_out2.expand(batch_size, HIDDEN_SIZE, PROTOTYPE_NUM * 2)
+        prtt = self.prototype.view(1, HIDDEN_SIZE, PROTOTYPE_NUM * 2)
+        prtt = prtt.expand(batch_size, HIDDEN_SIZE, PROTOTYPE_NUM * 2)
         X_diff = (X_out3 - prtt)**2
         X_out4 = torch.sum(X_diff, 1)  ### batch_size, PROTOTYPE_NUM
         ###### prototype
@@ -117,8 +117,26 @@ class RLP(torch.nn.Module):
         matching_loss = torch.mean(matching_loss)
         return X_out6, matching_loss
 
-    def generate_prototype(self, data_dict, rule_dict):
-        '''
+    def generate_prototype(self, data_dict, rule_dict):  
+        ### compute average
+        total_num = len(data_dict)
+        num = int(np.ceil(total_num * 1.0 / BATCH_SIZE))
+        for i in range(num):
+            stt = i * BATCH_SIZE
+            endn = min(total_num, stt + BATCH_SIZE)
+            if stt >= endn:
+                continue
+            batch_data = data_dict[stt:endn]
+            batch_data = Variable(torch.from_numpy(batch_data))
+            batch_X_out = self.forward_highway(batch_data)
+            if i == 0:
+                X_out = batch_X_out
+            else:
+                X_out = torch.cat([X_out, batch_X_out], 0)
+        p = torch.mean(X_out, 0)
+        p_average = p.data 
+        ### compute average
+
         p = Variable(torch.zeros(PROTOTYPE_NUM, HIDDEN_SIZE))
         for i in range(len(rule_dict)):
             #data = [data_dict[j] for j in rule_dict[i]]
@@ -142,28 +160,12 @@ class RLP(torch.nn.Module):
             p[i,:] = torch.mean(X_out, 0)
         self.prototype = p.data 
         self.prototype = Variable(self.prototype, requires_grad = False)
-        '''
-        total_num = len(data_dict)
-        num = int(np.ceil(total_num * 1.0 / BATCH_SIZE))
-        for i in range(num):
-            stt = i * BATCH_SIZE
-            endn = min(total_num, stt + BATCH_SIZE)
-            if stt >= endn:
-                continue
-            batch_data = data_dict[stt:endn]
-            batch_data = Variable(torch.from_numpy(batch_data))
-            batch_X_out = self.forward_highway(batch_data)
-            if i == 0:
-                X_out = batch_X_out
-            else:
-                X_out = torch.cat([X_out, batch_X_out], 0)
-        p = torch.mean(X_out, 0)
-        p = p.data 
-        self.prototype = Variable(torch.randn(PROTOTYPE_NUM, HIDDEN_SIZE), requires_grad = True) * 0.1
+        
+
+        self.prototype2 = Variable(torch.randn(PROTOTYPE_NUM, HIDDEN_SIZE), requires_grad = True) * 0.1
         for i in range(PROTOTYPE_NUM):
-            self.prototype[i,:] = self.prototype[i,:] + Variable(p)
-
-
+            self.prototype2[i,:] = self.prototype2[i,:] + Variable(p_average)
+        self.prototype = torch.cat([self.prototype, self.prototype2], 0)
 
 
 
@@ -232,7 +234,7 @@ N = len(train_data)
 iter_in_epoch = int(np.ceil(N * 1.0 / BATCH_SIZE))
 #test_N = test_query.shape[0]
 #test_iter_in_epoch = int(test_N / batch_size)
-EPOCH = 20
+EPOCH = 9
 lamb = 0
 for epoch in range(EPOCH):
     if epoch >= 0 and epoch % 1 == 0:
@@ -264,7 +266,7 @@ for epoch in range(EPOCH):
         output, matching_loss = nnet(batch_x)
         
 
-        ##print(nnet.prototype)
+        ## print(nnet.prototype.requires_grad)
         loss = loss_crossentropy(output, batch_label) # + lamb * matching_loss
         opt_.zero_grad()
         loss.backward()  ## retain_variables = True ,   retain_graph = True
@@ -294,9 +296,6 @@ plt.ylabel('loss')
 plt.savefig('sgd.jpg')
 plt.show()
 '''
-
-
-
 
 
 

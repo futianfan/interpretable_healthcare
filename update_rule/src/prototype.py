@@ -216,7 +216,7 @@ N = len(train_data)
 iter_in_epoch = int(np.ceil(N * 1.0 /BATCH_SIZE))
 #test_N = test_query.shape[0]
 #test_iter_in_epoch = int(test_N / batch_size)
-EPOCH = 20
+EPOCH = 10
 lamb = 0
 for epoch in range(EPOCH):
     if epoch >= 0 and epoch % 1 == 0:
@@ -267,7 +267,7 @@ for epoch in range(EPOCH):
     t2 = time()
     print('Epoch '+str(epoch) + ' takes ' + str((t2-t1)) + ' sec. loss: ' + str(loss_average)[:6] )
 
-similarity(nnet, train_data, rule_dict, sys.argv[6])
+#similarity(nnet, train_data, rule_dict, sys.argv[6])
 
 '''
 plt.plot(l_his, label='SGD')
