@@ -1,5 +1,5 @@
 '''
-python2 ./src/rcnn_fc_softmax.py data/training_model_by_word2vec_1.vector data/training_feature results/corels_rule_list ./data/training_label ./data/test_feature ./data/test_label ./data/train_lstm_output.npy ./data/test_lstm_output.npy ./results/rule_data_list
+python2 ./src/rcnn_highway_fc_softmax.py data/training_model_by_word2vec_1.vector data/training_feature results/corels_rule_list ./data/training_label ./data/test_feature ./data/test_label ./data/train_lstm_output.npy ./data/test_lstm_output.npy ./results/rule_data_list
 '''
 
 from __future__ import print_function
@@ -240,9 +240,7 @@ class RLP(torch.nn.Module):
         f_map = lambda x: max(int((int((x - KERNEL_SIZE) / STRIDE) + 1) / MAXPOOL_NUM),1)
         X_len2 = map(f_map, X_len)
         X_batch_4 = X_batch_4.permute(0,2,1)
-        #print(X_batch_4.shape)
-        #print(X_len)
-        #print(X_len2)
+
 
         X_out2 = self.forward_rnn(X_batch_4, X_len2)
         return X_out2 
@@ -256,6 +254,7 @@ class RLP(torch.nn.Module):
 
     def forward(self, X_batch, X_len):
         X_out2 = self.forward_A(X_batch, X_len)
+        X_out2 = self.forward_highway(X_out2)
         X_out6 = F.softmax(self.out3(X_out2))
         return X_out6
         '''

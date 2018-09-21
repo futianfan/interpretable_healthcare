@@ -1,6 +1,6 @@
 '''
 
-python2 ./src/prototype.py results/rule_data_list ./data/train_lstm_output.npy ./data/training_label  ./data/test_lstm_output.npy ./data/test_label  ./results/similarity
+python2 ./src/prototype_nohighway.py results/rule_data_list ./data/train_lstm_output.npy ./data/training_label  ./data/test_lstm_output.npy ./data/test_label  ./results/similarity
 
 '''
 
@@ -101,7 +101,7 @@ class RLP(torch.nn.Module):
         batch_size = X_batch.shape[0]
         #X_batch = torch.from_numpy(X_batch) 
         #X_batch = Variable(X_batch)
-        X_out2 = self.forward_highway(X_batch)
+        X_out2 = X_batch ###X_out2 = self.forward_highway(X_batch)
 
         X_out2 = X_out2.view(batch_size,HIDDEN_SIZE,1)
         X_out3 = X_out2.expand(batch_size, HIDDEN_SIZE, PROTOTYPE_NUM)

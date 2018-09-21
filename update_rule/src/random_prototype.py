@@ -1,6 +1,6 @@
 '''
 
-python2 ./src/prototype.py results/rule_data_list ./data/train_lstm_output.npy ./data/training_label  ./data/test_lstm_output.npy ./data/test_label  ./results/similarity
+python2 ./src/random_prototype.py results/rule_data_list ./data/train_lstm_output.npy ./data/training_label  ./data/test_lstm_output.npy ./data/test_label  ./results/similarity
 
 '''
 

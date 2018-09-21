@@ -1,7 +1,10 @@
 '''
 python2 ./src/pure_rule_learning.py --rule_file ./corels/rule_list_result --test_file ./data/training_data_1.txt 
+python2 ./src/pure_rule_learning.py --rule_file ./results/corels_rule_list --test_file ./data/training_data_1.txt 
+
 python2 ./src/pure_rule_learning.py --rule_file ./corels/rule_list_result --test_file ./data/test_data_1.txt 
 '''
+
 
 import sys
 import argparse

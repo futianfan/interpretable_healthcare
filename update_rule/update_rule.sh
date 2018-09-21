@@ -46,6 +46,7 @@ cd -
 python2 ./src/generate_X_using_feature_selection.py $n ./data/training_label ./data/training_feature ./data/training_selected_feature
 #### rule learning
 ./corels/corels -r 0.0000000015 -c 3 -p 1  data/training_selected_feature data/label > results/corels_rule_list
+./corels/corels -r 0.0000000015 -c 3 -p 2  data/training_selected_feature data/label > results/corels_rule_list
 
 
 ##### output is: 
@@ -56,8 +57,7 @@ python2 ./src/generate_X_using_feature_selection.py $n ./data/training_label ./d
 ### 18 seconds per EPOCH   18*20/60 = 6 min 
 python2 ./src/rcnn_fc_softmax.py data/training_model_by_word2vec_1.vector data/training_feature results/corels_rule_list ./data/training_label ./data/test_feature ./data/test_label ./data/train_lstm_output.npy ./data/test_lstm_output.npy ./results/rule_data_list
 
-
-
+python2 ./src/prototype_nohighway.py results/rule_data_list ./data/train_lstm_output.npy ./data/training_label  ./data/test_lstm_output.npy ./data/test_label ./results/similarity 
 python2 ./src/prototype.py results/rule_data_list ./data/train_lstm_output.npy ./data/training_label  ./data/test_lstm_output.npy ./data/test_label ./results/similarity 
 
 python2 ./src/add_data.py $INPUT_FILE results/rule_data_list results/similarity tmp 5
@@ -76,5 +76,8 @@ done
 ### merge rule 
 python src/union_rule.py --origin_rule_file results/rule_data_list --united_rule_file results/union_rule_data_list --union_num 2
 python2 ./src/prototype.py results/union_rule_data_list ./data/train_lstm_output.npy ./data/training_label  ./data/test_lstm_output.npy ./data/test_label ./results/similarity 
+
+### visualize
+
 
 
